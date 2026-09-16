@@ -403,14 +403,16 @@ async function startPicarto(serviceId, channel, token) {
             (info && info.userId && String(item.u) === String(info.userId))
           );
 
+          const displayName = isOwner ? `${item.n} (配信者)` : item.n;
+
           log('受信 [' + item.n + ']: ' + commentText);
           emitComment(serviceId, {
             userId: item.u,
-            name: item.n,
+            name: displayName,
             comment: commentText,
-            profileImage: item.i || (info && info.avatar) || '',
+            profileImage: '',
             hasGift: false,
-            isOwner,
+            isOwner: false,
             timestamp: item.a ? Number(item.a) : Date.now(),
           });
         }
