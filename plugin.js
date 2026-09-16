@@ -494,7 +494,7 @@ const plugin = {
         }
         if (!channel) return;
 
-        // 内蔵ブラウザのエラー切断防止（URLが設定されていたら自動クリア）
+        // 外部WebSocket連携のため、枠設定を最適化（URL空欄を維持して直接注入を安定化）
         if (picartoService.url && picartoService.url.trim() !== '') {
           fetch('http://localhost:11180/api/services/' + picartoService.id, {
             method: 'PUT',
