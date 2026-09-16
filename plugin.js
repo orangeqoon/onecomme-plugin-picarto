@@ -470,9 +470,8 @@ const plugin = {
         if (!res.ok) return;
         const services = await res.json();
 
-        // 枠名に picarto を含む枠、または URL に picarto を含む枠を探す
+        // 枠名に picarto を含む枠、または URL に picarto を含む枠を探す（OFFでも検出してコメント注入）
         const picartoService = services.find((s) => {
-          if (!s.enabled) return false;
           const name = (s.name || '').toLowerCase();
           const u = (s.url || '').toLowerCase();
           return name.includes('picarto') || u.includes('picarto.tv');
@@ -480,10 +479,19 @@ const plugin = {
 
         if (!picartoService) {
           if (activeSocket || currentChannel) {
-            log('Picarto枠がオフになりました。切断します。');
+            log('Picarto枠が見つかりません。切断します。');
             disconnect();
           }
           return;
+        }
+
+        // わんコメの接続数制限を回避するため、枠は常にOFF（未接続）に維持して直接コメント注入
+        if (picartoService.enabled || (picartoService.url && picartoService.url.trim() !== '')) {
+          fetch('http://localhost:11180/api/services/' + picartoService.id, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...picartoService, enabled: false, url: '', meta: {} }),
+          }).catch(() => {});
         }
 
         const cfg = loadConfig(pluginDir);
@@ -493,15 +501,6 @@ const plugin = {
           if (m) channel = m[1];
         }
         if (!channel) return;
-
-        // 外部WebSocket連携のため、枠設定を最適化（URL空欄を維持して直接注入を安定化）
-        if (picartoService.url && picartoService.url.trim() !== '') {
-          fetch('http://localhost:11180/api/services/' + picartoService.id, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...picartoService, url: '', meta: {} }),
-          }).catch(() => {});
-        }
 
         // 枠IDやチャンネルが切り替わった場合、または未接続の場合に接続開始
         if (currentChannel !== channel || currentServiceId !== picartoService.id || !activeSocket) {
