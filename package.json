@@ -1,0 +1,26 @@
+{
+  "name": "onecomme-plugin-picarto",
+  "version": "1.0.0",
+  "description": "Picarto.tv live comment synchronization plugin for OneComme",
+  "main": "plugin.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "onecomme",
+    "onecomme-plugin",
+    "picarto",
+    "live-chat",
+    "streaming"
+  ],
+  "author": "orangeqoon",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/orangeqoon/onecomme-plugin-picarto.git"
+  },
+  "bugs": {
+    "url": "https://github.com/orangeqoon/onecomme-plugin-picarto/issues"
+  },
+  "homepage": "https://github.com/orangeqoon/onecomme-plugin-picarto#readme"
+}

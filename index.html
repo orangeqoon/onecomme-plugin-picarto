@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Picarto コメント連携設定</title>
+  <style>
+    :root {
+      --bg: #18191c;
+      --card-bg: #222428;
+      --accent: #19c864;
+      --text: #ffffff;
+      --text-sub: #9ea2a8;
+      --border: #32353b;
+      --error: #ff4757;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      padding: 24px;
+      line-height: 1.5;
+    }
+    .container {
+      max-width: 580px;
+      margin: 0 auto;
+      background: var(--card-bg);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      padding: 28px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 16px;
+    }
+    .header h1 {
+      font-size: 20px;
+      font-weight: 600;
+    }
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      background: #2f333a;
+      color: var(--text-sub);
+    }
+    .status-badge.connected {
+      background: rgba(25, 200, 100, 0.15);
+      color: var(--accent);
+    }
+    .status-badge.error {
+      background: rgba(255, 71, 87, 0.15);
+      color: var(--error);
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+    .form-group {
+      margin-bottom: 18px;
+    }
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: var(--text-sub);
+    }
+    input[type="text"], input[type="password"] {
+      width: 100%;
+      padding: 10px 12px;
+      background: #121316;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: #fff;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input[type="text"]:focus, input[type="password"]:focus {
+      border-color: var(--accent);
+    }
+    .help-text {
+      font-size: 12px;
+      color: var(--text-sub);
+      margin-top: 5px;
+    }
+    .help-text a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .help-text a:hover {
+      text-decoration: underline;
+    }
+    .btn {
+      display: inline-block;
+      width: 100%;
+      padding: 12px;
+      background: var(--accent);
+      color: #000;
+      border: none;
+      border-radius: 6px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      margin-top: 8px;
+    }
+    .btn:hover { opacity: 0.9; }
+    .info-card {
+      margin-top: 24px;
+      background: #16181b;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      font-size: 13px;
+    }
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+    .info-row:last-child { margin-bottom: 0; }
+    .msg-toast {
+      padding: 10px;
+      border-radius: 6px;
+      font-size: 13px;
+      margin-bottom: 14px;
+      display: none;
+    }
+    .msg-toast.success { background: rgba(25, 200, 100, 0.2); color: var(--accent); }
+    .msg-toast.error { background: rgba(255, 71, 87, 0.2); color: var(--error); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Picarto コメント連携</h1>
+      <div id="statusBadge" class="status-badge">
+        <span class="dot"></span>
+        <span id="statusText">待機中</span>
+      </div>
+    </div>
+
+    <div id="toast" class="msg-toast"></div>
+
+    <form id="configForm">
+      <div class="form-group">
+        <label for="channel">Picarto チャンネル名</label>
+        <input type="text" id="channel" placeholder="例: orangeqoon" required>
+        <div class="help-text">配信者のPicartoユーザー名を入力します。</div>
+      </div>
+
+      <div class="form-group">
+        <label for="token">ボット用 OAuth トークン（推奨）</label>
+        <input type="password" id="token" placeholder="トークン文字列を入力">
+        <div class="help-text">
+          <a href="https://oauth.picarto.tv/chat/bot" target="_blank" rel="noopener">Picarto公式トークン発行ページ</a> にログインしてトークンを取得・入力すると、安定してチャットを送受信できます。
+        </div>
+      </div>
+
+      <button type="submit" class="btn">設定を保存して接続</button>
+    </form>
+
+    <div class="info-card">
+      <div class="info-row">
+        <span style="color: var(--text-sub);">わんコメ枠の連携状況:</span>
+        <span id="serviceStatus" style="font-weight: 600;">検索中...</span>
+      </div>
+      <div class="info-row">
+        <span style="color: var(--text-sub);">配信状態:</span>
+        <span id="liveStatus">-</span>
+      </div>
+      <div class="info-row">
+        <span style="color: var(--text-sub);">配信タイトル:</span>
+        <span id="liveTitle">-</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = '/api/plugins/dev.orangeqoon.picarto';
+
+    async function loadStatus() {
+      try {
+        const res = await fetch(API_URL);
+        if (!res.ok) return;
+        const data = await res.json();
+
+        if (data.config) {
+          if (document.activeElement !== document.getElementById('channel')) {
+            document.getElementById('channel').value = data.config.channel || '';
+          }
+          if (document.activeElement !== document.getElementById('token')) {
+            document.getElementById('token').value = data.config.token || '';
+          }
+        }
+
+        const conn = data.connection || {};
+        const badge = document.getElementById('statusBadge');
+        const text = document.getElementById('statusText');
+
+        badge.className = 'status-badge';
+        if (conn.state === 'connected') {
+          badge.classList.add('connected');
+          text.textContent = '接続中 (受信待機)';
+        } else if (conn.state === 'error') {
+          badge.classList.add('error');
+          text.textContent = conn.error || 'エラー';
+        } else if (conn.state === 'checking') {
+          text.textContent = '配信確認中...';
+        } else {
+          text.textContent = '待機中';
+        }
+
+        document.getElementById('serviceStatus').textContent = conn.currentServiceId ? '紐付け完了' : 'Picarto枠を検出中';
+        document.getElementById('liveStatus').textContent = conn.isLive ? '● 配信中' : 'オフライン';
+        document.getElementById('liveStatus').style.color = conn.isLive ? 'var(--accent)' : 'var(--text-sub)';
+        document.getElementById('liveTitle').textContent = conn.title || '-';
+
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    document.getElementById('configForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const channel = document.getElementById('channel').value.trim();
+      const token = document.getElementById('token').value.trim();
+      const toast = document.getElementById('toast');
+
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ channel, token })
+        });
+        const data = await res.json();
+        if (data.success) {
+          toast.className = 'msg-toast success';
+          toast.textContent = '設定を保存しました。接続を開始します。';
+          toast.style.display = 'block';
+          setTimeout(loadStatus, 500);
+        } else {
+          throw new Error('保存に失敗しました');
+        }
+      } catch (err) {
+        toast.className = 'msg-toast error';
+        toast.textContent = 'エラー: ' + err.message;
+        toast.style.display = 'block';
+      }
+    });
+
+    loadStatus();
+    setInterval(loadStatus, 3000);
+  </script>
+</body>
+</html>
