@@ -139,7 +139,7 @@ function connectPicartoChat(channel, token, handlers) {
   let pathStr;
 
   if (token && token.trim()) {
-    pathStr = '/chat/token=' + encodeURIComponent(token.trim());
+    pathStr = '/bot/username=' + encodeURIComponent(channel.trim()) + '&password=' + encodeURIComponent(token.trim());
   } else {
     pathStr = '/chat/channel=' + encodeURIComponent(channel.trim());
   }
@@ -381,6 +381,17 @@ async function startPicarto(serviceId, channel, token) {
       log('★ Picartoチャット接続完了！コメント受信スタンバイ完了');
     },
     onMessage: (json) => {
+      if (json && json.t === 'authentication') {
+        if (json.success) {
+          log('★ Picartoボット認証成功！チャット同期が有効化されました');
+          connectionStatus.state = 'connected';
+        } else {
+          log('認証エラー: トークンが無効です。https://oauth.picarto.tv/chat/bot で再発行してください。');
+          connectionStatus.state = 'error';
+          connectionStatus.error = 'Invalid token';
+        }
+        return;
+      }
       // チャットメッセージ形式: { t: "c", m: [ { c, rn, u, n, m, a, i, k, id } ] }
       if (json && json.t === 'c' && Array.isArray(json.m)) {
         for (const item of json.m) {
